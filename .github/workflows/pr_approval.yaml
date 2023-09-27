@@ -66,7 +66,7 @@ jobs:
               console.log('review.user.login = %s', review.user.login)
 
               if (review.state == 'APPROVED' && review.user.login == 'github-actions[bot]') {
-                github.rest.issues.dismissReview({
+                github.rest.pulls.dismissReview({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   pull_number: context.issue.number,
