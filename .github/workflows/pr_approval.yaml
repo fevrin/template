@@ -1,5 +1,5 @@
 ---
-name: 'Approval by label'
+name: 'Auto-approver'
 
 on:
   pull_request:
