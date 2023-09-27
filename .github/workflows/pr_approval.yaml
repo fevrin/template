@@ -47,7 +47,7 @@ jobs:
         with:
           script: |
 
-            result = await github.rest.pulls.listReviews({
+            const result = await github.rest.pulls.listReviews({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number,
@@ -55,17 +55,21 @@ jobs:
 
             console.log(`result = '${result}'`)
             console.log(`result = ${result}`)
+            console.log('result = %s', result)
 
             reviews = result.data
 
             for (review of reviews) {
-              console.log(`review = ${review}`)
-              console.log(`user = ${review.user}`)
+              console.log('review = %s', review)
+              console.log('user = %s', review.user)
 
-              github.rest.issues.dismissReview({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                labels: ['Triage']
-              })
+              if (review.event == 'APPROVE') {
+                github.rest.issues.dismissReview({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: context.issue.number,
+                  review_id: review.id,
+                  message: 'Review dismissal reason: magic label removed'
+                })
+              }
             }
