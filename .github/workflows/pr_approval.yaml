@@ -19,6 +19,8 @@ concurrency:
 jobs:
   check-approve:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     if: |
       contains(github.event.pull_request.labels.*.name, 'override') ||
       contains(github.event.pull_request.labels.*.name, 'approve')
@@ -35,6 +37,8 @@ jobs:
 
   check-dismissal:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     if: |
       (!contains(github.event.pull_request.labels.*.name, 'override')) &&
       (!contains(github.event.pull_request.labels.*.name, 'approve'))
