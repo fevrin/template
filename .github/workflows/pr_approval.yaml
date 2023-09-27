@@ -62,8 +62,10 @@ jobs:
             for (review of reviews) {
               console.log('review = %s', review)
               console.log('user = %s', review.user)
+              console.log('review.state = %s', review.state)
+              console.log('review.user.login = %s', review.user.login)
 
-              if (review.event == 'APPROVE') {
+              if (review.state == 'APPROVED' && review.user.login == 'github-actions[bot]') {
                 github.rest.issues.dismissReview({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
