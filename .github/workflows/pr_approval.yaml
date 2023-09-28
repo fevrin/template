@@ -6,6 +6,8 @@ on:
     types:
       - labeled
       - unlabeled
+  pull_request_review:
+    types: [dismissed]
 
 # from the example here:
 # https://docs.github.com/en/actions/examples/using-scripts-to-test-your-code-on-a-runner#example-workflow
@@ -74,4 +76,26 @@ jobs:
                   message: 'Review dismissal reason: magic label removed'
                 })
               }
+            }
+
+  remove-label:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    if: |
+      github.event.action == 'dismissed' &&
+      (contains(github.event.pull_request.labels.*.name, 'override') ||
+      contains(github.event.pull_request.labels.*.name, 'approve'))
+    steps:
+      - uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        with:
+          debug: true
+          script: |
+            for (label of ['override','approve']) {
+              github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: label,
+              })
             }
