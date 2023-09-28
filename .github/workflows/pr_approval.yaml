@@ -1,0 +1,138 @@
+---
+name: 'Auto-approver'
+
+on:
+  pull_request:
+    types:
+      - labeled
+      - unlabeled
+  pull_request_review:
+    types: [dismissed]
+
+# from the example here:
+# https://docs.github.com/en/actions/examples/using-scripts-to-test-your-code-on-a-runner#example-workflow
+permissions:
+  contents: read
+  pull-requests: read
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  check-approve:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+        #    if: |
+        #      contains(github.event.pull_request.labels.*.name, 'override') ||
+        #      contains(github.event.pull_request.labels.*.name, 'approve')
+    if: |
+      github.event.action == 'labeled' &&
+      (github.event.label.name == 'override' ||
+      github.event.label.name == 'approve')
+    steps:
+      - name: debug
+        run: |
+          echo "label action toJson = '${{ toJson(github.event.action) }}'"
+          echo "label action = '${{ github.event.action }}'"
+          echo label action = ${{ github.event.action }}
+          echo "label name = '${{ github.event.label.name }}'"
+          echo ${{ github.event.action }} == ${{ 'labeled' }} = ${{ github.event.action == 'labeled' }}
+
+      - name: echo labels
+        run: |
+          echo 'array = ${{ toJson(github.event.pull_request.labels.*.name) }}'
+
+      - uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        with:
+          debug: true
+          script: |
+            github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              event: 'APPROVE',
+            })
+
+  check-dismiss:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+        #    if: |
+        #      (!contains(github.event.pull_request.labels.*.name, 'override')) &&
+        #      (!contains(github.event.pull_request.labels.*.name, 'approve'))
+    if: |
+      github.event.action == 'unlabeled' &&
+      (github.event.label.name == 'override' ||
+      github.event.label.name == 'approve')
+    steps:
+      - uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        with:
+          debug: true
+          script: |
+
+            const result = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100,
+            });
+
+            console.log(`result = '${result}'`)
+            console.log(`result = ${result}`)
+            console.log('result = %s', result)
+
+            reviews = result.data
+
+            for (review of reviews) {
+              console.log('review = %s', review)
+              console.log('user = %s', review.user)
+              console.log('review.state = %s', review.state)
+              console.log('review.user.login = %s', review.user.login)
+
+              if (review.state == 'APPROVED' && review.user.login == 'github-actions[bot]') {
+                github.rest.pulls.dismissReview({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: context.issue.number,
+                  review_id: review.id,
+                  message: 'Review dismissal reason: magic label removed'
+                })
+              }
+            }
+
+  remove-label:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    if: |
+      github.event.action == 'dismissed' &&
+      (contains(github.event.pull_request.labels.*.name, 'override') ||
+      contains(github.event.pull_request.labels.*.name, 'approve'))
+    steps:
+      - name: debug
+        run: |
+          echo "label action toJson = '${{ toJson(github.event.action) }}'"
+          echo "label action = '${{ github.event.action }}'"
+          echo label action = ${{ github.event.action }}
+          echo "label name = '${{ github.event.label.name }}'"
+          echo ${{ github.event.action }} == ${{ 'unlabeled' }} = ${{ github.event.action == 'unlabeled' }}
+          echo "labels array = ${{ github.event.pull_request.labels.*.name }}"
+          echo "labels array toJson = '${{ toJson(github.event.pull_request.labels.*.name) }}'"
+          echo "labels array toJson formatted = '${{ format("{0}", toJson(github.event.pull_request.labels.*.name)) }}'"
+          echo
+
+      - uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        with:
+          debug: true
+          script: |
+            const labels = '${{ toJson(github.event.pull_request.labels.*.name) }}'
+            for (label of labels) {
+              console.log('label = "%s"', label)
+              github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: label,
+              })
+            }
