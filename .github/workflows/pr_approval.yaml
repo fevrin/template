@@ -117,12 +117,18 @@ jobs:
           echo label action = ${{ github.event.action }}
           echo "label name = '${{ github.event.label.name }}'"
           echo ${{ github.event.action }} == ${{ 'unlabeled' }} = ${{ github.event.action == 'unlabeled' }}
+          echo "labels array = ${{ github.event.pull_request.labels.*.name }}"
+          echo "labels array toJson = '${{ toJson(github.event.pull_request.labels.*.name) }}'"
+          echo "labels array toJson formatted = '${{ format("{0}", toJson(github.event.pull_request.labels.*.name)) }}'"
+          echo
 
       - uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
         with:
           debug: true
           script: |
-            for (label of ['override','approve']) {
+            const labels = '${{ toJson(github.event.pull_request.labels.*.name) }}'
+            for (label of labels) {
+              console.log('label = "%s"', label)
               github.rest.issues.removeLabel({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
