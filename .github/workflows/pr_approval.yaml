@@ -23,9 +23,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+        #    if: |
+        #      contains(github.event.pull_request.labels.*.name, 'override') ||
+        #      contains(github.event.pull_request.labels.*.name, 'approve')
     if: |
-      contains(github.event.pull_request.labels.*.name, 'override') ||
-      contains(github.event.pull_request.labels.*.name, 'approve')
+      github.event.action == 'labeled' &&
+      (github.event.label.name == 'override' ||
+      github.event.label.name == 'approve')
     steps:
       - uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
         with:
@@ -41,9 +45,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+        #    if: |
+        #      (!contains(github.event.pull_request.labels.*.name, 'override')) &&
+        #      (!contains(github.event.pull_request.labels.*.name, 'approve'))
     if: |
-      (!contains(github.event.pull_request.labels.*.name, 'override')) &&
-      (!contains(github.event.pull_request.labels.*.name, 'approve'))
+      github.event.action == 'unlabeled' &&
+      (github.event.label.name == 'override' ||
+      github.event.label.name == 'approve')
     steps:
       - uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
         with:
