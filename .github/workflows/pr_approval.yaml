@@ -38,10 +38,10 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number,
-              event: 'APPROVE'
+              event: 'APPROVE',
             })
 
-  check-dismissal:
+  check-dismiss:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
